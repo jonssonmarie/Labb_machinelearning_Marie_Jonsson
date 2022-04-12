@@ -73,8 +73,7 @@ Movies with the 10 highest amount of ratings
 #### 1.1.c  Beräkna den genomsnittliga ratingen för dessa 10 filmerna med flest ratings.
 Mean rating on all 10 top movies 4.1
 
-#### 1.1 d - f. svaren finns i scriptet exploratory_data_analysis.py samt bilderna på plottarna finns i powerpointen. 
-De flesta plottar måste vara i stor storlek för att kunna bedömmas.
+#### 1.1 d - f. svaren finns i scriptet exploratory_data_analysis.py
 
 
 ## Recommender in recommender.py
