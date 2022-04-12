@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import OneHotEncoder
@@ -10,14 +11,12 @@ from sklearn.pipeline import Pipeline
 from sklearn.ensemble import VotingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.model_selection import cross_val_score
 from sklearn.metrics import classification_report, ConfusionMatrixDisplay, confusion_matrix
 import joblib
 
-
 cardio_train = "Data/cardio_train.csv"
 
-df_cardio = pd.read_csv(cardio_train, delimiter=';')
+data = pd.read_csv(cardio_train, delimiter=';')
 
 
 def initial_analyse(df):
@@ -34,7 +33,7 @@ def initial_analyse(df):
     print("index:\n", df.index, "\n")
 
 
-initial_analyse(df_cardio)
+initial_analyse(data)
 
 
 def check_min_max(df, df_col):
@@ -46,21 +45,21 @@ def check_min_max(df, df_col):
     print(f"min: {df[df_col].min()} max: {df[df_col].max()}")
 
 
-check_min_max(df_cardio, 'age')
-check_min_max(df_cardio, 'height')
-check_min_max(df_cardio, 'weight')
-check_min_max(df_cardio, 'ap_hi')
-check_min_max(df_cardio, 'ap_lo')
-check_min_max(df_cardio, 'cholesterol')
-check_min_max(df_cardio, 'gluc')
-check_min_max(df_cardio, 'smoke')
-check_min_max(df_cardio, 'alco')
-check_min_max(df_cardio, 'active')
-check_min_max(df_cardio, 'cardio')
-check_min_max(df_cardio, 'id')
+check_min_max(data, 'age')
+check_min_max(data, 'height')
+check_min_max(data, 'weight')
+check_min_max(data, 'ap_hi')
+check_min_max(data, 'ap_lo')
+check_min_max(data, 'cholesterol')
+check_min_max(data, 'gluc')
+check_min_max(data, 'smoke')
+check_min_max(data, 'alco')
+check_min_max(data, 'active')
+check_min_max(data, 'cardio')
+check_min_max(data, 'id')
 
 # store length on DataFrame for calculations
-num_id = len(df_cardio['id'])
+num_id = len(data['id'])
 
 
 # a) Hur många är positiva för hjärt-kärlsjukdom och hur många är negativa?
@@ -72,15 +71,15 @@ def calculate_rate_heart_disease(df):
     pos_heart_disease = len(df.query("cardio == 1"))
     neg_heart_disease = len(df.query("cardio == 0"))
     print(f"hjärt-kärlsjukdom: Antal positiva:{pos_heart_disease} Antal negativa:{neg_heart_disease}")
-    print(f"hjärt-kärlsjukdom: Andel positiva:{pos_heart_disease/num_id} Andel negativa:{neg_heart_disease/num_id}")
+    print(f"hjärt-kärlsjukdom: Andel positiva:{pos_heart_disease / num_id} Andel negativa:{neg_heart_disease / num_id}")
 
 
-calculate_rate_heart_disease(df_cardio)
+calculate_rate_heart_disease(data)
 
 # b) Hur stor andel har normala, över normala och långt över normala kolesterolvärden? Rita ett tårtdiagram.
-cardio_low = len(df_cardio.query("cholesterol == 1"))/num_id
-cardio_normal = len(df_cardio.query("cholesterol == 2"))/num_id
-cardio_high = len(df_cardio.query("cholesterol == 3"))/num_id
+cardio_low = len(data.query("cholesterol == 1")) / num_id
+cardio_normal = len(data.query("cholesterol == 2")) / num_id
+cardio_high = len(data.query("cholesterol == 3")) / num_id
 
 
 def plot_pie_cholesterol(lst, title):
@@ -118,8 +117,8 @@ def plot_hist(df, x_value, bin_num, title):
     plt.show()
 
 
-plot_hist(df_cardio, 'age', 10, "Age distribution in days")
-plot_hist(df_cardio, 'height', 40, "height distribution in cm")
+plot_hist(data, 'age', 10, "Age distribution in days")
+plot_hist(data, 'height', 40, "height distribution in cm")
 
 
 # d) Hur stor andel röker?
@@ -131,16 +130,16 @@ def rate_smoker(df):
     smoker = len(df.query("smoke == 1"))
     non_smoker = len(df.query("smoke == 0"))
 
-    part_non_smoker = 100 * (non_smoker/num_id)
-    part_smoker = 100 * (smoker/num_id)
+    part_non_smoker = 100 * (non_smoker / num_id)
+    part_smoker = 100 * (smoker / num_id)
     print(f"smoker: {part_non_smoker:.2f} % \nnon smoker: {part_smoker:.2f} % ")
 
 
-rate_smoker(df_cardio)
+rate_smoker(data)
 
 # e) Hur ser viktfördelningen ut? Rita lämpligt diagram.
 # min: 10.0 max: 200.0 bin 30 gives 6,3 kg steps
-plot_hist(df_cardio, 'weight', 30, "Weight distribution in kg")
+plot_hist(data, 'weight', 30, "Weight distribution in kg")
 
 
 # f) Hur ser längdfördelningen ut? Rita lämpligt diagram.
@@ -157,16 +156,15 @@ def plot_box(df, x_value, title, y_value=None):
     plt.show()
 
 
-plot_box(df_cardio, 'height', "height distribution in cm")
-
+plot_box(data, 'height', "height distribution in cm")
 
 # g) Hur stor andel av kvinnor respektive män har hjärt-kärlsjukdom? Rita lämpligt diagram
-num_women = len(df_cardio.query("gender == 1"))
-num_men = len(df_cardio.query("gender == 2"))
-women_heart_disease = len(df_cardio.query("gender == 1 & cardio == 1"))/num_women
-men_heart_disease = len(df_cardio.query("gender == 2 & cardio == 1"))/num_men
-women_heart_wo_disease = len(df_cardio.query("gender == 1 & cardio == 0"))/num_women
-men_heart_wo_disease = len(df_cardio.query("gender == 2 & cardio == 0"))/num_men
+num_women = len(data.query("gender == 1"))
+num_men = len(data.query("gender == 2"))
+women_heart_disease = len(data.query("gender == 1 & cardio == 1")) / num_women
+men_heart_disease = len(data.query("gender == 2 & cardio == 1")) / num_men
+women_heart_wo_disease = len(data.query("gender == 1 & cardio == 0")) / num_women
+men_heart_wo_disease = len(data.query("gender == 2 & cardio == 0")) / num_men
 
 print(f"women w heart disease {women_heart_disease:.2f} women wo heart disease {women_heart_wo_disease:.2f}")
 print(f"men w heart disease {men_heart_disease:.2f} men wo heart disease {men_heart_wo_disease:.2f}")
@@ -203,12 +201,11 @@ def plot_histogram(df, x_value, hue_str):
     plt.show()
 
 
-plot_histogram(df_cardio, "cardio", "gender")
-
+plot_histogram(data, "cardio", "gender")
 
 # 2.1.0 - Feature engineering BMI
 # adding a column with age in year for plot
-df_cardio['age_year'] = df_cardio['age']/365
+data['age_year'] = data['age'] / 365
 
 
 def calculate_BMI(df, height_str, weight_str):
@@ -218,29 +215,29 @@ def calculate_BMI(df, height_str, weight_str):
     :param weight_str: str
     :return: DataFrame
     """
-    df_cardio["bmi"] = (df[weight_str] / (df[height_str]/100)**2).round(1)
-    return df_cardio["bmi"]
+    data["bmi"] = (df[weight_str] / (df[height_str] / 100) ** 2).round(1)
+    return data["bmi"]
 
 
-df_cardio["bmi"] = calculate_BMI(df_cardio, "height", "weight")
+data["bmi"] = calculate_BMI(data, "height", "weight")
 
-plot_histogram(df_cardio, "bmi", "active")
-plot_histogram(df_cardio, "bmi", "gender")
-plot_histogram(df_cardio, "bmi", "height")
+"""plot_histogram(data, "bmi", "active")
+plot_histogram(data, "bmi", "gender")
+plot_histogram(data, "bmi", "height")"""
 
 # filtering
-df_cardio_filt = df_cardio[(df_cardio['bmi'] > 10) & (df_cardio['bmi'] < 138) &
-                           (df_cardio['height'] > 90) & (df_cardio['height'] < 208) &
-                           (df_cardio['ap_hi'] < 400) & (df_cardio['ap_hi'] > 30) &
-                           (df_cardio['ap_lo'] < 250) & (df_cardio['ap_lo'] > 30)]
+data_filtered = data[(data['bmi'] > 10) & (data['bmi'] < 138) &
+                     (data['height'] > 90) & (data['height'] < 208) &
+                     (data['ap_hi'] < 400) & (data['ap_hi'] > 30) &
+                     (data['ap_lo'] < 250) & (data['ap_lo'] > 30)]
 
-df_cardio_filt = df_cardio_filt[df_cardio_filt["ap_lo"] < df_cardio_filt["ap_hi"]]
+data_filtered = data_filtered[data_filtered["ap_lo"] < data_filtered["ap_hi"]]
 
-print(f"height min: {df_cardio_filt['height'].min()}, height max: {df_cardio_filt['height'].max()}")
-print(f"BMI min: {df_cardio_filt['bmi'].min()}, BMI max: {df_cardio_filt['bmi'].max()}")
-print(f"ap_hi min: {df_cardio_filt['ap_hi'].min()}, ap_hi max: {df_cardio_filt['ap_hi'].max()}")
-print(f"ap_lo min: {df_cardio_filt['ap_lo'].min()}, ap_lo max: {df_cardio_filt['ap_lo'].max()}")
-print(f"weight min: {df_cardio_filt['weight'].min()}, weight max: {df_cardio_filt['weight'].max()}")
+print(f"height min: {data_filtered['height'].min()}, height max: {data_filtered['height'].max()}")
+print(f"BMI min: {data_filtered['bmi'].min()}, BMI max: {data_filtered['bmi'].max()}")
+print(f"ap_hi min: {data_filtered['ap_hi'].min()}, ap_hi max: {data_filtered['ap_hi'].max()}")
+print(f"ap_lo min: {data_filtered['ap_lo'].min()}, ap_lo max: {data_filtered['ap_lo'].max()}")
+print(f"weight min: {data_filtered['weight'].min()}, weight max: {data_filtered['weight'].max()}")
 
 
 def box_plot_before_after(df1, df2, x_value, sup_title):
@@ -261,13 +258,13 @@ def box_plot_before_after(df1, df2, x_value, sup_title):
     plt.show()
 
 
-box_plot_before_after(df_cardio, df_cardio_filt, "ap_lo", "ap_lo distribution")
-box_plot_before_after(df_cardio, df_cardio_filt, "ap_hi", "ap_hi distribution")
-box_plot_before_after(df_cardio, df_cardio_filt, "age_year", "age_year distribution")
-box_plot_before_after(df_cardio, df_cardio_filt, "weight", "weight distribution")
+box_plot_before_after(data, data_filtered, "ap_lo", "ap_lo distribution")
+box_plot_before_after(data, data_filtered, "ap_hi", "ap_hi distribution")
+box_plot_before_after(data, data_filtered, "age_year", "age_year distribution")
+box_plot_before_after(data, data_filtered, "weight", "weight distribution")
 
-# drop colum age_year after plot
-df_cardio_filt = df_cardio_filt.drop(columns=["age_year"], axis=1)
+# drop colum age_year after plot and categories
+data_filtered = data_filtered.drop(columns=["age_year"], axis=1)
 
 
 # 2.1.0 b) kapa en kategorisk BMI-feature med kategorierna:
@@ -294,31 +291,29 @@ def add_category(df, col, low_threshold, new_column, category_str, limit_type=No
         df.loc[(df[col] >= low_threshold), new_column] = category_str
 
 
-add_category(df_cardio_filt, 'bmi',  18.5, "bmi_status", "Underweight", 1)
-add_category(df_cardio_filt, 'bmi',  18.5, "bmi_status", "normal range", 2, 25)
-add_category(df_cardio_filt, 'bmi',  25, "bmi_status", "overweight", 2, 30)
-add_category(df_cardio_filt, 'bmi',  30, "bmi_status", "obese (class I)", 2, 35)
-add_category(df_cardio_filt, 'bmi',  35, "bmi_status", "obese (class II)", 2, 40)
-add_category(df_cardio_filt, 'bmi',  40, "bmi_status", "obese (class III)", 3)
-
+add_category(data_filtered, 'bmi', 18.5, "bmi_status", "Underweight", 1)
+add_category(data_filtered, 'bmi', 18.5, "bmi_status", "normal range", 2, 25)
+add_category(data_filtered, 'bmi', 25, "bmi_status", "overweight", 2, 30)
+add_category(data_filtered, 'bmi', 30, "bmi_status", "obese (class I)", 2, 35)
+add_category(data_filtered, 'bmi', 35, "bmi_status", "obese (class II)", 2, 40)
+add_category(data_filtered, 'bmi', 40, "bmi_status", "obese (class III)", 3)
 
 # 2.1.1 - Feature engineering blodtryck
-df_cardio_filt.loc[(df_cardio_filt['ap_hi'] < 120) & (df_cardio_filt['ap_lo'] < 80), "blood_pressure"] = "healthy"
+data_filtered.loc[(data_filtered['ap_hi'] < 120) & (data_filtered['ap_lo'] < 80), "blood_pressure"] = "healthy"
 
-df_cardio_filt.loc[(df_cardio_filt['ap_hi'] >= 120) & (df_cardio_filt['ap_hi'] < 130) &
-                   (df_cardio_filt['ap_lo'] < 80), "blood_pressure"] = "elevated"
+data_filtered.loc[(data_filtered['ap_hi'] >= 120) & (data_filtered['ap_hi'] < 130) &
+                  (data_filtered['ap_lo'] < 80), "blood_pressure"] = "elevated"
 
-df_cardio_filt.loc[(df_cardio_filt['ap_hi'] >= 130) & (df_cardio_filt['ap_hi'] < 140) |
-                   (df_cardio_filt['ap_lo'] >= 80) & (df_cardio_filt['ap_lo'] < 90),
-                   "blood_pressure"] = "stage 1 hypertension"
+data_filtered.loc[(data_filtered['ap_hi'] >= 130) & (data_filtered['ap_hi'] < 140) |
+                  (data_filtered['ap_lo'] >= 80) & (data_filtered['ap_lo'] < 90),
+                  "blood_pressure"] = "stage 1 hypertension"
 
-df_cardio_filt.loc[(df_cardio_filt['ap_hi'] >= 140) & (df_cardio_filt['ap_hi'] <= 180)
-                   | (df_cardio_filt['ap_lo'] >= 90) & (df_cardio_filt['ap_lo'] <= 120),
-                   "blood_pressure"] = "stage 2 hypertension"
+data_filtered.loc[(data_filtered['ap_hi'] >= 140) & (data_filtered['ap_hi'] <= 180)
+                  | (data_filtered['ap_lo'] >= 90) & (data_filtered['ap_lo'] <= 120),
+                  "blood_pressure"] = "stage 2 hypertension"
 
-df_cardio_filt.loc[(df_cardio_filt['ap_hi'] > 180) | (df_cardio_filt['ap_lo'] > 120),
-                   "blood_pressure"] = "hypertension crisis"
-
+data_filtered.loc[(data_filtered['ap_hi'] > 180) | (data_filtered['ap_lo'] > 120),
+                  "blood_pressure"] = "hypertension crisis"
 
 """
 2.2.0 - Visualiseringar andel sjukdomar
@@ -348,20 +343,20 @@ def calculate_proportion(df, d_category_col):
         filtered_df = df[(df[value] == key)]
         count_cardio = len(filtered_df[filtered_df["cardio"] == 1])
         precent = count_cardio / len(filtered_df)
-        prop2 = pd.DataFrame({key: precent}, index=[n+1])
+        prop2 = pd.DataFrame({key: precent}, index=[n + 1])
         proportion_df2 = pd.concat([proportion_df2, prop2], axis=1)
         n = 0
     return proportion_df2
 
 
-proportion_bmi_lst = calculate_proportion(df_cardio_filt, dict_bmi)
-proportion_smoking_lst = calculate_proportion(df_cardio_filt, dict_smoking)
-proportion_bp_lst = calculate_proportion(df_cardio_filt, dict_blood_pressure)
-proportion_alco_lst = calculate_proportion(df_cardio_filt, dict_alco)
-proportion_train_lst = calculate_proportion(df_cardio_filt, dict_training)
-proportion_gluc_lst = calculate_proportion(df_cardio_filt, dict_gluc)
-proportion_chol_lst = calculate_proportion(df_cardio_filt, dict_cholesterol)
-proportion_sex_lst = calculate_proportion(df_cardio_filt, dict_gender)
+proportion_bmi_lst = calculate_proportion(data_filtered, dict_bmi)
+proportion_smoking_lst = calculate_proportion(data_filtered, dict_smoking)
+proportion_bp_lst = calculate_proportion(data_filtered, dict_blood_pressure)
+proportion_alco_lst = calculate_proportion(data_filtered, dict_alco)
+proportion_train_lst = calculate_proportion(data_filtered, dict_training)
+proportion_gluc_lst = calculate_proportion(data_filtered, dict_gluc)
+proportion_chol_lst = calculate_proportion(data_filtered, dict_cholesterol)
+proportion_sex_lst = calculate_proportion(data_filtered, dict_gender)
 
 
 def create_lst_for_plot():
@@ -418,13 +413,13 @@ def heatmap(df):
     plt.show()
 
 
-heatmap(df_cardio_filt)
+heatmap(data_filtered)
 
 """
 2.3 - Skapa två dataset
 created one dataframe since I used OneHotEncoding and then splited in two dataframes
 """
-df_bmi_sex_bloodpressure = df_cardio_filt.drop(columns=["ap_hi", "ap_lo", "height", "weight", "bmi"], axis=1)
+df_reduced = data_filtered.drop(columns=["ap_hi", "ap_lo", "height", "weight", "bmi"], axis=1)
 
 
 def one_hot_encoder(df_to_convert, sub_lst):
@@ -442,26 +437,35 @@ def one_hot_encoder(df_to_convert, sub_lst):
     return encoded
 
 
-encode = one_hot_encoder(df_bmi_sex_bloodpressure, ["gender", "bmi_status", "blood_pressure", "cholesterol", "gluc"])
-df_cardio_filt = df_cardio_filt.reset_index().drop(columns=['index'])
-df_encode = pd.DataFrame(encode, columns=['gender_1', 'gender_2', 'bmi_status_Underweight', 'bmi_status_normal range',
-                                          'bmi_status_obese (class I)', 'bmi_status_obese (class II)',
-                                          'bmi_status_obese (class III)', 'bmi_status_overweight',
-                                          'blood_pressure_elevated', 'blood_pressure_healthy',
-                                          'blood_pressure_hypertension crisis', 'blood_pressure_stage 1 hypertension',
-                                          'blood_pressure_stage 2 hypertension', 'cholesterol_1', 'cholesterol_2',
-                                          'cholesterol_3', 'gluc_1', 'gluc_2', 'gluc_3'])
+encode = one_hot_encoder(df_reduced, ["gender", "bmi_status", "blood_pressure", "cholesterol", "gluc"])
+data_filtered = data_filtered.reset_index().drop(columns=['index'])
+data_encode = pd.DataFrame(encode, columns=['gender_1', 'gender_2', 'bmi_status_Underweight', 'bmi_status_normal range',
+                                            'bmi_status_obese (class I)', 'bmi_status_obese (class II)',
+                                            'bmi_status_obese (class III)',
+                                            'bmi_status_overweight', 'blood_pressure_elevated',
+                                            'blood_pressure_healthy',
+                                            'blood_pressure_hypertension crisis', 'blood_pressure_stage 1 hypertension',
+                                            'blood_pressure_stage 2 hypertension', 'cholesterol_1', 'cholesterol_2',
+                                            'cholesterol_3',
+                                            'gluc_1', 'gluc_2', 'gluc_3'])
+
+data_encoded = data_filtered.join(data_encode, how='outer')
 
 
-df_cardio_encoded = df_cardio_filt.join(df_encode, how='outer')
+def split_data(df):
+    """
+    split to two dataframe to see which one is the best
+    :param df: DataFrame
+    :return: DataFrame
+    """
+    data_encode1 = df.drop(columns=["id", "gender", "ap_hi", "ap_lo", "height", "weight", "bmi",
+                                    "bmi_status", "blood_pressure", "gluc", "cholesterol"], axis=0)
+    data_encode2 = df.drop(columns=["id", "gender", "height", "weight", "bmi_status", "blood_pressure", "gluc",
+                                    "cholesterol"], axis=0)
+    return data_encode1
 
 
-# split to two DataFrame
-df_cardio_encode1 = df_cardio_encoded.drop(columns=["id", "gender", "ap_hi", "ap_lo", "height", "weight", "bmi",
-                                                          "bmi_status", "blood_pressure", "gluc",
-                                                          "cholesterol"], axis=0)
-df_cardio_encode2 = df_cardio_encoded.drop(columns=["id", "gender", "height", "weight", "bmi_status",
-                                                          "blood_pressure", "gluc", "cholesterol"], axis=0)
+chosen_data = split_data(data_encoded)
 
 
 # 2.4 - Välja modell
@@ -476,8 +480,7 @@ def split_to_y_x(df, col):
     return x, y
 
 
-x, y = split_to_y_x(df_cardio_encode1, "cardio")
-# x, y = split_to_y_x(df_cardio_encode2, "cardio") # decide not to use after choosing model
+x, y = split_to_y_x(chosen_data, "cardio")
 
 
 def split_train_test(x_value, y_value, t_size):
@@ -492,12 +495,12 @@ def split_train_test(x_value, y_value, t_size):
     return x_train, x_test, y_train, y_test
 
 
-# since small data approx 70/30 train/val
-X_train, X_test, y_train, y_test = split_train_test(x, y, 0.33)
-X_train_val, X_test_val, y_train_val, y_test_val = split_train_test(X_train, y_train, 0.30)
+# train, val, test - 80, 10, 10
+X_train, X_test, y_train, y_test = split_train_test(np.array(x), np.array(y), 0.20)
+X_val, X_test, y_val, y_test = split_train_test(X_test, y_test, 0.50)
 
 
-def evaluate_model(model, test_x, test_y):
+def evaluate_model(model, test_x, test_y, title):
     """
     :param model: model
     :param test_x: DataFrame
@@ -505,6 +508,7 @@ def evaluate_model(model, test_x, test_y):
     :return: None
     """
     y_predict = model.predict(test_x)
+    print(title)
     print(classification_report(test_y, y_predict))
     cm = confusion_matrix(test_y, y_predict)
     ConfusionMatrixDisplay(cm).plot()
@@ -520,13 +524,13 @@ pipe_log_reg = Pipeline([("scaler", None), ("logistic", LogisticRegression())])
 pipe_RFC = Pipeline([("scaler", None), ("random_forest", RandomForestClassifier())])
 
 
-def tune_hyperparameter(train_x_val, train_y_val):
+def cross_validation(train_x, train_y):
     """
-    :param train_x_val: DataFrame
-    :param train_y_val: DataFrame
+    :param train_x: DataFrame
+    :param train_y: DataFrame
     :return: None
     """
-    param_grid_RFC = {"random_forest__n_estimators": [100, 150, 200, 300],
+    param_grid_RFC = {"random_forest__n_estimators": list(range(20, 60)),
                       "random_forest__criterion": ["gini", "entropy"],
                       "random_forest__max_features": ["auto", "sqrt", "log2"],
                       "scaler": [StandardScaler(), MinMaxScaler()]}
@@ -538,86 +542,50 @@ def tune_hyperparameter(train_x_val, train_y_val):
                           "logistic__max_iter": [100, 1000, 10000],
                           "scaler": [StandardScaler(), MinMaxScaler()]}
 
-    param_grid_knn = {"knn__n_neighbors": list(range(1, 50)), "scaler": [StandardScaler(), MinMaxScaler()]}
+    param_grid_knn = {"knn__n_neighbors": list(range(5, 30)), "scaler": [StandardScaler(), MinMaxScaler()]}
 
     # cross validation by GridSearchCV
-    classifier_RFC = GridSearchCV(estimator=pipe_RFC, param_grid=param_grid_RFC, cv=5, verbose=1, scoring="recall")
+    classifier_RFC = GridSearchCV(estimator=pipe_RFC, param_grid=param_grid_RFC, cv=10, verbose=1, scoring="recall")
     classifier_Log_reg = GridSearchCV(estimator=pipe_log_reg, param_grid=param_grid_Log_reg, cv=5, verbose=1,
                                       scoring="recall")
     classifier_knn = GridSearchCV(estimator=pipe_KNN, param_grid=param_grid_knn, cv=5, verbose=1, scoring="recall")
 
-    grid_search_RFC = classifier_RFC.fit(train_x_val, train_y_val)
-    grid_search_Log_reg = classifier_Log_reg.fit(train_x_val, train_y_val)
-    grid_search_knn = classifier_knn.fit(train_x_val, train_y_val)
+    grid_search_RFC = classifier_RFC.fit(train_x, train_y)
+    grid_search_Log_reg = classifier_Log_reg.fit(train_x, train_y)
+    grid_search_knn = classifier_knn.fit(train_x, train_y)
 
     # Print best score and best hyperparameter
     print(f"Best Score RFC: {grid_search_RFC.best_score_:.4f} using {grid_search_RFC.best_params_}")
     print(f"Best Score Log_reg: {grid_search_Log_reg.best_score_:.4f} using {grid_search_Log_reg.best_params_}")
     print(f"Best Score KNN: {grid_search_knn.best_score_:.4f} using {grid_search_knn.best_params_}")
 
-    # evaluate model
-    evaluate_model(classifier_Log_reg, X_test_val, y_test_val)
-    evaluate_model(classifier_RFC, X_test_val, y_test_val)
-    evaluate_model(classifier_knn, X_test_val, y_test_val)
+    classifier_VC = VotingClassifier([('logistic', classifier_knn),
+                                      ('rfc', classifier_RFC),
+                                      ('knn', classifier_Log_reg)], voting="hard")
+    classifier_VC.fit(X_val, y_val)
+
+    # evaluate model on decided hyperparameter
+    evaluate_model(classifier_Log_reg, X_val, y_val, "logistic")
+    evaluate_model(classifier_RFC, X_val, y_val, "random_forest")
+    evaluate_model(classifier_knn, X_val, y_val, "knn")
+    evaluate_model(classifier_VC, X_val, y_val, "VotingClassifier")
 
 
-#tune_hyperparameter(X_train_val, y_train_val)
+cross_validation(X_train, y_train)
 
 
-def evaluate_on_decided_hyperparameter(test_x, test_y):
-    """
-    Evaluate on decided hyperparameter for all models
-    :param test_x: DataFrame
-    :param test_y: DataFramed
-    :return: pipeline
-    """
-    pipe_logistic = Pipeline([("scaler", MinMaxScaler()), ("logistic", LogisticRegression(penalty="none",
-                             multi_class='ovr', solver='saga', max_iter=10000, C=1.0))])
-    pipe_logistic.fit(test_x, test_y)
-
-    pipe_knn = Pipeline([("scaler", StandardScaler()), ("knn", KNeighborsClassifier(n_neighbors=15))])
-    pipe_knn.fit(test_x, test_y)
-
-    pipe_rfc = Pipeline([("scaler", StandardScaler()), ("rfc", RandomForestClassifier(n_estimators=150,
-                        criterion="gini", max_features="log2"))])
-    pipe_rfc.fit(test_x, test_y)
-
-    classifier_VC = VotingClassifier([('logistic', pipe_knn),
-                                      ('rfc', pipe_rfc),
-                                      ('knn', pipe_logistic)], voting="hard")
-    classifier_VC.fit(test_x, test_y)
-
-    for clf, label in zip([pipe_logistic, pipe_knn, pipe_rfc, classifier_VC],
-                          ['Logistic Regression', 'KNN', 'Random Forest', "Ensemble"]):
-        scores = cross_val_score(clf, test_x, test_y, scoring='recall', cv=5)
-        print("Accuracy: %0.2f (+/- %0.2f) [%s]" % (scores.mean(), scores.std(), label))
-
-    return pipe_logistic, pipe_knn, pipe_rfc
-
-
-pipe_logistic, pipe_knn, pipe_rfc = evaluate_on_decided_hyperparameter(X_train_val, y_train_val)
-evaluate_model(pipe_logistic, X_test_val, y_test_val)
-evaluate_model(pipe_knn, X_test_val, y_test_val)
-evaluate_model(pipe_rfc, X_test_val, y_test_val)
-
-
-# Välj bästa modellen, träna modellen på X_train, y_train, träna på X_test, y_test
 def model(x_training, y_training):
     """
     :param x_training: DataFrame
     :param y_training: DataFrame
     :return: model
     """
-    model = KNeighborsClassifier(n_neighbors=15)
+    model = Pipeline([("scaler", MinMaxScaler()), ("knn", KNeighborsClassifier(n_neighbors=13))])
     model.fit(x_training, y_training)
-
     return model
 
 
-model_train = model(X_train, y_train)
-evaluate_model(model_train, X_test, y_test)
-model_test = model(X_test, y_test)
-evaluate_model(model_test, X_test_val, y_test_val)
+model(X_test, y_test)
 
 
 # 2.7 "Deploy"
@@ -626,29 +594,25 @@ def reduced_data(df):
     :param df: DataFrame
     :return: DataFrame
     """
-    df_100_row = df.sample(n=100, random_state=42).drop(columns="cardio")
+    df_100_row = df.sample(n=100, random_state=42).drop(columns=["cardio"], axis=0)
     df_100_row.to_csv("Data/test_samples.csv", sep=";", index=False)
-
     return df_100_row
 
 
-df_100_rows = reduced_data(df_cardio_encode2)
-df_cardio2_reduced = df_cardio_encode2[~df_cardio_encode2.isin(df_100_rows)].dropna()
+df_100_rows = reduced_data(chosen_data)
+data_reduced = chosen_data[~chosen_data.isin(df_100_rows)].dropna()
 
 
 def save_model(df):
     """
-    :param df: DataFrame
     :return: None
     """
     x, y = split_to_y_x(df, "cardio")
-    X_train, X_test, y_train, y_test = split_train_test(x, y, 0.33)
-    pipe = Pipeline([("scaler", StandardScaler()), ("knn", KNeighborsClassifier(n_neighbors=15))])
-    pipe.fit(X_train, y_train)
-
+    X_train, X_test, y_train, y_test = split_train_test(x, y, 0.30)
+    chosen_model = model(X_train, y_train)
     # save the model to disk
     filename = 'Model/model.pkl'
-    joblib.dump(pipe, open(filename, 'wb'))
+    joblib.dump(chosen_model, open(filename, 'wb'), compress=True)
 
 
-save_model(df_cardio2_reduced)
+save_model(data_reduced)
